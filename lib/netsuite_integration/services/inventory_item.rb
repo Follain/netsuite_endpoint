@@ -63,7 +63,7 @@ module NetsuiteIntegration
             end
           end
         else
-          ['_inventoryItem']
+          ['_inventoryItem','_assembly']
         end
       end
 
