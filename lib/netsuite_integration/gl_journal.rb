@@ -85,7 +85,7 @@ module NetsuiteIntegration
            @journal=NetSuite::Records::JournalEntry.new
             journal.external_id=journal_id
             journal.memo=journal_memo
-            journal.tran_date=NetSuite::Utilities.normalize_datetime_to_netsuite(journal_date.to_datetime)
+            journal.tran_date=NetSuite::Utilities.normalize_time_to_netsuite_date(journal_date.to_datetime)
             journal.location={internal_id: journal_location}
             journal.line_list=build_item_list
             if journal.line_list.lines.any?

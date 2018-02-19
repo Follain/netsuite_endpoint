@@ -17,7 +17,7 @@ module NetsuiteIntegration
       @receipt = NetSuite::Records::ItemReceipt.initialize ns_order
       receipt.external_id = receipt_id
       receipt.memo = receipt_memo
-      receipt.tran_date = NetSuite::Utilities.normalize_datetime_to_netsuite(received_date.to_datetime)
+      receipt.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(received_date.to_datetime)
       build_item_list
 
       # add new receipt after updating the po
@@ -68,6 +68,14 @@ module NetsuiteIntegration
       @receipt_memo ||= order_payload['receipt_memo']
     end
 
+    def touch_item(obj)
+      #touch item so top level is update for stitch
+      item = NetSuite::Records::InventoryItem.new(
+        item_id: obj.item.internal_id
+      )
+      item.update
+    end
+
     def build_item_list
       # NetSuite will throw an error when you dont return all items back
       # in the fulfillment request so we just set the quantity to 0 here
@@ -76,6 +84,9 @@ module NetsuiteIntegration
         item = order_payload[:line_items].find do |i|
           i[:sku] == receipt_item.item.name
         end
+
+        #required for stitch
+        touch_item(receipt_item)
 
         if item && item[:received].to_i > 0
           receipt_item.quantity = item[:received].to_i

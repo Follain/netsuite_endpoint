@@ -9,8 +9,6 @@ module NetsuiteIntegration
       @config = config
       @adjustment_payload = if transfer_order?
                               payload[:transfer_order]
-                            elsif register_sale?
-                              payload[:register_sale]
                             elsif sales_inv_adjustment?
                               payload[:sales_inv_adjustment]
                             else
@@ -63,12 +61,12 @@ module NetsuiteIntegration
       @adjustment_date ||= adjustment_payload['adjustment_date']
     end
 
-    def adjustment_account_number
-      @adjustment_account_number ||= adjustment_payload['adjustment_account_number']
+    def adjustment_account
+      @adjustment_account ||= adjustment_payload['adjustment_account_number']
     end
 
-    def adjustment_dept_name
-      @adjustment_dept_name ||= adjustment_payload['adjustment_dept_name']
+    def adjustment_dept
+      @adjustment_dept ||= adjustment_payload['adjustment_dept']
     end
 
     def adjustment_memo
@@ -87,7 +85,7 @@ module NetsuiteIntegration
       line = 0
       adjustment_items = adjustment_payload[:line_items].map do |item|
         # do not process zero qty adjustments
-        next unless item[:adjustment_qty].to_i != 0
+        next unless item[:quantity].to_i != 0
         line += 1
         nsproduct_id = item[:nsproduct_id]
         if nsproduct_id.nil?
@@ -110,7 +108,7 @@ module NetsuiteIntegration
         # check average price and fill it in ..ns has habit of Zeroing it out when u hit zero quantity
         itemlocation = invitem.locations_list.locations.select { |e| e[:location_id][:@internal_id] == adjustment_location.to_s }.first
         if itemlocation[:average_cost_mli].to_i == 0 &&
-           item[:adjustment_qty].to_i > 0
+           item[:quantity].to_i > 0
           # can only set unit price on takeon
           if itemlocation[:last_purchase_price_mli].to_i != 0
             unit_cost = itemlocation[:last_purchase_price_mli]
@@ -123,12 +121,12 @@ module NetsuiteIntegration
           NetSuite::Records::InventoryAdjustmentInventory.new(item: { internal_id: nsproduct_id },
                                                               line: line,
                                                               unit_cost: unit_cost.to_i,
-                                                              adjust_qty_by: item[:adjustment_qty],
+                                                              adjust_qty_by: item[:quantity],
                                                               location: { internal_id: adjustment_location })
         else
           NetSuite::Records::InventoryAdjustmentInventory.new(item: { internal_id: nsproduct_id },
                                                               line: line,
-                                                              adjust_qty_by: item[:adjustment_qty],
+                                                              adjust_qty_by: item[:quantity],
                                                               location: { internal_id: adjustment_location })
         end
       end
@@ -143,30 +141,22 @@ module NetsuiteIntegration
     def create_adjustment
       if new_adjustment?
         # internal numbers differ between platforms
-        adjustment_account = find_by_account_number(adjustment_account_number)
-        if adjustment_account.nil?
-          raise "GL Account: #{adjustment_account_number} not found!"
-        else
-          adjustment_account_id = adjustment_account.internal_id
+        if adjustment_account.blank?
+          raise "GL Account: #{adjustment_account} not found!"
         end
 
-        if adjustment_dept_name.present?
-          adjustment_department = find_by_dept_name(adjustment_dept_name)
-          if adjustment_department.nil?
-            raise "GL Department: #{adjustment_dept_name} not found!"
-          else
-            adjustment_dept_id = adjustment_department.internal_id
-          end
+        if adjustment_dept.blank?
+          raise "GL Department: #{adjustment_dept} not found!"
         end
 
         @adjustment = NetSuite::Records::InventoryAdjustment.new
         adjustment.external_id = adjustment_id
         adjustment.memo = adjustment_memo
-        adjustment.tran_date = NetSuite::Utilities.normalize_datetime_to_netsuite(adjustment_date.to_datetime)
+        adjustment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(adjustment_date.to_datetime)
 
-        adjustment.account = { internal_id: adjustment_account_id }
-        if adjustment_department.present?
-          adjustment.department = { internal_id: adjustment_dept_id }
+        adjustment.account = { internal_id: adjustment_account }
+        if adjustment_dept.present?
+          adjustment.department = { internal_id: adjustment_dept }
         end
         adjustment.adj_location = { internal_id: adjustment_location }
         adjustment.inventory_list = build_item_list
@@ -184,11 +174,6 @@ module NetsuiteIntegration
               ExternalReference.record :transfer_order, adjustment_id,
                                        { netsuite: line_item },
                                        netsuite_id: adjustment.internal_id
-            elsif register_sale?
-              ExternalReference.record :register_sale,
-                                       adjustment_identifier,
-                                       { netsuite: line_item },
-                                       netsuite_id: adjustment.internal_id
             elsif sales_inv_adjustment?
               ExternalReference.record :sales_inv_adjustment,
                                        adjustment_identifier,
@@ -203,31 +188,6 @@ module NetsuiteIntegration
           end
         end
       end
-    end
-
-    def find_by_account_number(account_number)
-      NetSuite::Records::Account.search(criteria: { basic: [{ field: 'number',
-                                                              value: account_number,
-                                                              operator: 'is' }] })
-                                .results
-                                .first
-    end
-
-    def find_by_dept_name(dept_name)
-      NetSuite::Records::Department.search(criteria: { basic: [{ field: 'name',
-                                                                 value: dept_name,
-                                                                 operator: 'is' }] })
-                                   .results
-                                   .first
-    end
-
-    def find_sku_by_internal_id(id)
-      #flip flop between inventory Items and assembly items ... assembly is less frequent
-      NetSuite::Records::InventoryItem.get(id)
-      # Silence the error
-      # We don't care that the record was not found
-    rescue NetSuite::RecordNotFound
-      NetSuite::Records::AssemblyItem.get(id)
     end
   end
 end
