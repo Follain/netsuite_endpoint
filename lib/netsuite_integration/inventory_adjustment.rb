@@ -138,6 +138,16 @@ module NetsuiteIntegration
       @inventory_item_service ||= NetsuiteIntegration::Services::InventoryItem.new(@config)
     end
 
+    def find_sku_by_internal_id(id)
+      #flip flop between inventory Items and assembly items ... assembly is less frequent
+       NetSuite::Records::InventoryItem.get(id)
+      # Silence the error
+      # We don't care that the record was not found
+    rescue NetSuite::RecordNotFound
+      NetSuite::Records::AssemblyItem.get(id)
+    rescue NetSuite::RecordNotFound
+    end
+
     def create_adjustment
       if new_adjustment?
         # internal numbers differ between platforms
