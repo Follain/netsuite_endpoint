@@ -104,7 +104,7 @@ module NetsuiteIntegration
             raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
            end
         else
-          invitem = NetSuite::Records::InventoryItem.get(nsproduct_id)
+          invitem = find_sku_by_internal_id(nsproduct_id)
         end
         # rework for performance at somepoint no need to get inv item if qty <0
         # check average price and fill it in ..ns has habit of Zeroing it out when u hit zero quantity
@@ -220,5 +220,14 @@ module NetsuiteIntegration
                                    .results
                                    .first
     end
- end
+
+    def find_sku_by_internal_id(id)
+      #flip flop between inventory Items and assembly items ... assembly is less frequent
+      NetSuite::Records::InventoryItem.get(id)
+      # Silence the error
+      # We don't care that the record was not found
+    rescue NetSuite::RecordNotFound
+      NetSuite::Records::AssemblyItem.get(id)
+    end
+  end
 end
