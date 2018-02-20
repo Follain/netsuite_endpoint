@@ -7,9 +7,7 @@ module NetsuiteIntegration
     def initialize(config, payload = {})
       super(config, payload)
       @config = config
-      @adjustment_payload = if transfer_order?
-                              payload[:transfer_order]
-                            elsif sales_inv_adjustment?
+      @adjustment_payload = if sales_inv_adjustment?
                               payload[:sales_inv_adjustment]
                             else
                               payload[:inventory_adjustment]
@@ -23,7 +21,7 @@ module NetsuiteIntegration
     end
 
     def new_adjustment?
-      new_adjustment ||= !find_adjustment_by_external_id(adjustment_id)
+      @new_adjustment ||= !find_adjustment_by_external_id(adjustment_id)
     end
 
     def ns_adjustment
@@ -50,35 +48,35 @@ module NetsuiteIntegration
     end
 
     def adjustment_id
-      @adjustment_id ||= adjustment_payload['adjustment_id']
+      adjustment_payload['adjustment_id']
     end
 
     def ns_id
-      @ns_id ||= adjustment_payload['id']
+      adjustment_payload['id']
     end
 
     def adjustment_date
-      @adjustment_date ||= adjustment_payload['adjustment_date']
+      adjustment_payload['adjustment_date']
     end
 
     def adjustment_account
-      @adjustment_account ||= adjustment_payload['adjustment_account_number']
+      adjustment_payload['adjustment_account_number']
     end
 
     def adjustment_dept
-      @adjustment_dept ||= adjustment_payload['adjustment_dept']
+      adjustment_payload['adjustment_dept']
     end
 
     def adjustment_memo
-      @adjustment_memo ||= adjustment_payload['adjustment_memo']
+      adjustment_payload['adjustment_memo']
     end
 
     def adjustment_identifier
-      @adjustment_identifier ||= adjustment_payload['adjustment_identifier']
+      adjustment_payload['adjustment_identifier']
     end
 
     def adjustment_location
-      @adjustment_location ||= adjustment_payload['location']
+      adjustment_payload['location']
     end
 
     def build_item_list
@@ -102,7 +100,8 @@ module NetsuiteIntegration
             raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
            end
         else
-          invitem = find_sku_by_internal_id(nsproduct_id)
+          invitem = inventory_item_service.find_by_internal_id(nsproduct_id)
+
         end
         # rework for performance at somepoint no need to get inv item if qty <0
         # check average price and fill it in ..ns has habit of Zeroing it out when u hit zero quantity
@@ -138,16 +137,6 @@ module NetsuiteIntegration
       @inventory_item_service ||= NetsuiteIntegration::Services::InventoryItem.new(@config)
     end
 
-    def find_sku_by_internal_id(id)
-      #flip flop between inventory Items and assembly items ... assembly is less frequent
-       NetSuite::Records::InventoryItem.get(id)
-      # Silence the error
-      # We don't care that the record was not found
-    rescue NetSuite::RecordNotFound
-      NetSuite::Records::AssemblyItem.get(id)
-    rescue NetSuite::RecordNotFound
-    end
-
     def create_adjustment
       if new_adjustment?
         # internal numbers differ between platforms
@@ -180,11 +169,7 @@ module NetsuiteIntegration
                           netsuite_id: adjustment.internal_id,
                           description: adjustment_memo,
                           type: 'Adjustment' }
-            if transfer_order?
-              ExternalReference.record :transfer_order, adjustment_id,
-                                       { netsuite: line_item },
-                                       netsuite_id: adjustment.internal_id
-            elsif sales_inv_adjustment?
+            if sales_inv_adjustment?
               ExternalReference.record :sales_inv_adjustment,
                                        adjustment_identifier,
                                        { netsuite: line_item },
@@ -194,7 +179,7 @@ module NetsuiteIntegration
                                        adjustment_id,
                                        { netsuite: line_item },
                                        netsuite_id: adjustment.internal_id
-            end
+             end
           end
         end
       end

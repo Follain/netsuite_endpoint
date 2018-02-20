@@ -27,7 +27,7 @@ module NetsuiteIntegration
       end
 
       def find_by_item_name(name)
-        NetSuite::Records::InventoryItem.search({
+        NetSuite::Records::InventoryItem.search(
           criteria: {
             basic: [{
               field: 'displayName',
@@ -35,22 +35,33 @@ module NetsuiteIntegration
               operator: 'contains'
             }]
           }
-        }).results.first
+        ).results.first
       end
 
       def find_by_item_id(item_id)
-        NetSuite::Records::InventoryItem.search({
+        NetSuite::Records::InventoryItem.search(
           criteria: {
-            basic: basic_criteria_all + [{ field: 'itemId', value: item_id, operator: 'is' }]
+            basic: basic_criteria_all + [{ field: 'itemId',
+                                           value: item_id,
+                                           operator: 'is' }]
           },
           preferences: default_preferences
-        }).results.first
+        ).results.first
+      end
+
+      def find_by_internal_id(id)
+        NetSuite::Records::InventoryItem.search(criteria:
+        { basic: [{ field: 'internalIdNumber',
+                    operator: 'equalTo',
+                    type: 'SearchLongField',
+                    value: id }] },
+                                                preferences: default_preferences).results.first
       end
 
       # See ItemTypes examples here https://system.netsuite.com/help/helpcenter/en_US/SchemaBrowser/lists/v2013_2_0/accountingTypes.html#listAcctTyp:ItemType
       def item_type_to_fetch
-        if (item_types = config["netsuite_item_types"]).present?
-          item_types.split(";").map(&:strip).map do |item_type|
+        if (item_types = config['netsuite_item_types']).present?
+          item_types.split(';').map(&:strip).map do |item_type|
             # need this hack because of inconsistent type naming
             # https://github.com/spree/netsuite_endpoint/issues/7#issuecomment-41196467
             case item_type
@@ -63,92 +74,93 @@ module NetsuiteIntegration
             end
           end
         else
-          ['_inventoryItem','_assembly']
+          %w[_inventoryItem _assembly]
         end
       end
 
       private
-        def valid_items
-          items = search
 
-          ignored_items = ignore_future items
-          drop_invalid_ids ignored_items
-        end
+      def valid_items
+        items = search
 
-        # We need to set bodyFieldsOnly false to grab the pricing matrix
-        def search
-          NetSuite::Records::InventoryItem.search({
-            criteria: {
-              basic: basic_criteria.push(polling_filter)
-            },
-            preferences: default_preferences
-          }).results
-        end
+        ignored_items = ignore_future items
+        drop_invalid_ids ignored_items
+      end
 
-        def default_preferences
+      # We need to set bodyFieldsOnly false to grab the pricing matrix
+      def search
+        NetSuite::Records::InventoryItem.search(
+          criteria: {
+            basic: basic_criteria.push(polling_filter)
+          },
+          preferences: default_preferences
+        ).results
+      end
+
+      def default_preferences
+        {
+          pageSize: 80,
+          bodyFieldsOnly: false
+        }
+      end
+
+      def basic_criteria
+        [
           {
-            pageSize: 80,
-            bodyFieldsOnly: false
-          }
-        end
-
-        def basic_criteria
-          [
-            {
-              field: 'type',
-              operator: 'anyOf',
-              type: 'SearchEnumMultiSelectField',
-              value: item_type_to_fetch
-            },
-            {
-              field: 'isInactive',
-              value: false
-            }
-          ]
-        end
-
-         def basic_criteria_all
-          [
-            {
-              field: 'type',
-              operator: 'anyOf',
-              type: 'SearchEnumMultiSelectField',
-              value: item_type_to_fetch
-            }
-          ]
-        end
-
-        def polling_filter
+            field: 'type',
+            operator: 'anyOf',
+            type: 'SearchEnumMultiSelectField',
+            value: item_type_to_fetch
+          },
           {
-            field: 'lastModifiedDate',
-            type: 'SearchDateField',
-            operator: 'within',
-            value: [
-              last_updated_after,
-              time_now.iso8601
-            ]
+            field: 'isInactive',
+            value: false
           }
-        end
+        ]
+      end
 
-        def ignore_future(items)
-          items.select do |item|
-            item.last_modified_date.utc <= time_now
-          end
-        end
+      def basic_criteria_all
+        [
+          {
+            field: 'type',
+            operator: 'anyOf',
+            type: 'SearchEnumMultiSelectField',
+            value: item_type_to_fetch
+          }
+        ]
+     end
 
-        def drop_invalid_ids(items)
-          items.select { |item| item.item_id.present? }
-        end
+      def polling_filter
+        {
+          field: 'lastModifiedDate',
+          type: 'SearchDateField',
+          operator: 'within',
+          value: [
+            last_updated_after,
+            time_now.iso8601
+          ]
+        }
+      end
 
-        # Help us mock this when running the specs. Otherwise we might get VCR
-        # as different request might be done depending on this timestamp
-        def time_now
-          Time.now.utc
+      def ignore_future(items)
+        items.select do |item|
+          item.last_modified_date.utc <= time_now
         end
+      end
 
-        def last_updated_after
-          Time.parse(config.fetch(poll_param)).iso8601
-        end
+      def drop_invalid_ids(items)
+        items.select { |item| item.item_id.present? }
+      end
+
+      # Help us mock this when running the specs. Otherwise we might get VCR
+      # as different request might be done depending on this timestamp
+      def time_now
+        Time.now.utc
+      end
+
+      def last_updated_after
+        Time.parse(config.fetch(poll_param)).iso8601
+      end
     end
   end
 end
