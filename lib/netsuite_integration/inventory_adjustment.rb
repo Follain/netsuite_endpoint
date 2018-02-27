@@ -79,16 +79,8 @@ module NetsuiteIntegration
       adjustment_payload['location']
     end
 
-    def build_item_list
-      line = 0
-      adjustment_items = adjustment_payload[:line_items].map do |item|
-        # do not process zero qty adjustments
-        next unless item[:quantity].to_i != 0
-        line += 1
-        nsproduct_id = item[:nsproduct_id]
-        if nsproduct_id.nil?
-          # fix correct reference else abort if sku not found!
-          sku = item[:sku]
+    def find_sku(sku)
+          # fix correct reference else abort if sku not found! & return object
           invitem = inventory_item_service.find_by_item_id(sku)
           if invitem.present?
             nsproduct_id = invitem.internal_id
@@ -98,24 +90,50 @@ module NetsuiteIntegration
                                      netsuite_id: invitem.internal_id
           else
             raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
-           end
-        else
-          invitem = inventory_item_service.find_by_internal_id(nsproduct_id)
+          end
 
+          invitem
+    end
+
+    def build_item_list
+      line = 0
+      adjustment_items = adjustment_payload[:line_items].map do |item|
+        # do not process zero qty adjustments
+        next unless item[:quantity].to_i != 0
+        line += 1
+        nsproduct_id = item[:nsproduct_id]
+
+        #fetch ns key id not available
+        if nsproduct_id.nil?
+          # fix correct reference else abort if sku not found!
+          invitem = find_sku(item[:sku])
         end
-        # rework for performance at somepoint no need to get inv item if qty <0
+
         # check average price and fill it in ..ns has habit of Zeroing it out when u hit zero quantity
-        itemlocation = invitem.locations_list.locations.select { |e| e[:location_id][:@internal_id] == adjustment_location.to_s }.first
-        if itemlocation[:average_cost_mli].to_i == 0 &&
-           item[:quantity].to_i > 0
-          # can only set unit price on takeon
-          if itemlocation[:last_purchase_price_mli].to_i != 0
-            unit_cost = itemlocation[:last_purchase_price_mli]
-          elsif invitem.last_purchase_price.to_i != 0
-            unit_cost = invitem.last_purchase_price
-          elsif item[:cost].present?
+        # Manage cost price on receipt adjustments!
+        if item[:quantity].to_i > 0
+          if invitem.blank?
+            invitem = inventory_item_service.find_by_internal_id(nsproduct_id)
+          end
+
+          itemlocation = invitem
+                         .locations_list.locations
+                         .select { |e| e[:location_id][:@internal_id] == adjustment_location.to_s }
+                         .first
+
+          if itemlocation[:average_cost_mli].to_i == 0
+            # can only set unit price on takeon
+            if itemlocation[:last_purchase_price_mli].to_i != 0
+              unit_cost = itemlocation[:last_purchase_price_mli]
+            elsif invitem.last_purchase_price.to_i != 0
+              unit_cost = invitem.last_purchase_price
+            elsif item[:cost].present?
+              unit_cost = item[:cost]
+            end
+          else
             unit_cost = item[:cost]
-           end
+          end
+
           # set default unit_price if none
           NetSuite::Records::InventoryAdjustmentInventory.new(item: { internal_id: nsproduct_id },
                                                               line: line,
