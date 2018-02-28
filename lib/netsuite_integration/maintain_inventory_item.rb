@@ -47,7 +47,7 @@ module NetsuiteIntegration
             )
       end
 
-      if item.errors.any? { |e| e.type != 'WARN' }
+      if item.errors.present? { |e| e.type != 'WARN' }
         raise "Item Update/create failed: #{item.errors.map(&:message)}"
       else
         line_item = { sku: sku, netsuite_id: item.internal_id,
