@@ -91,6 +91,9 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
   fetch_endpoint '/get_work_orders',
                  NetsuiteIntegration::WorkOrder,
                  'work_order'
+  fetch_endpoint '/get_tranfer_orders',
+                 NetsuiteIntegration::TransferOrder,
+                 'transfer_order'
   fetch_endpoint '/get_vendors',
                  NetsuiteIntegration::Vendor,
                  'vendor'
@@ -104,6 +107,12 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
   post '/add_inventory_transfer' do
     NetsuiteIntegration::InventoryTransfer.new(@config, @payload)
     summary = 'Netsuite Inventory Transfer Created '
+    result 200, summary
+  end
+
+  post '/maintain_transfer_order' do
+    NetsuiteIntegration::MaintainTransferOrder.new(@config, @payload)
+    summary = "Netsuite tranfer Order Created "
     result 200, summary
   end
 

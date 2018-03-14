@@ -37,12 +37,14 @@ module NetsuiteIntegration
       ignore_matrix.map do |item|
         {
           id: item.item_id,
-          name: item.store_display_name || item.item_id,
-          description: item.sales_description,
+          name: item.item_id,
+          description: item.purchase_description,
           sku: item.item_id,
           price: get_item_base_price(item.pricing_matrix.prices),
           cost_price: item.cost_estimate,
-          channel: "NetSuite"
+          channel: "NetSuite",
+          internal_id: item.internal_id,
+          record_type: item.record_type
         }
       end
     end
@@ -100,7 +102,7 @@ module NetsuiteIntegration
         end
 
         validated_options = options.select { |o| o.values.all? }.reduce Hash.new, :merge
-        
+
         { price: price, sku: child.item_id, options: validated_options }
       end
     end
