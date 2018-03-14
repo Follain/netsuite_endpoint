@@ -2,23 +2,24 @@
 
 module NetsuiteIntegration
   class MaintainTransferOrder < Base
-    attr_reader :config, :payload, :transfer_payload, :transfer, :fulfillment, :receipt, :invtransfer, :adjustmentt
+    attr_reader :config, :payload, :transfer_payload, :transfer, :fulfillment, :receipt, :invtransfer
 
     def initialize(config, payload = {})
       super(config, payload)
       @config = config
       @transfer_payload = payload[:transfer_order]
       @transfer = find_transfer_by_ext_id(transfer_name)
-      unless transfer_closed?
-        if sent?
+      if transfer_closed? && received?
+        not_pending_over_receipts
+        create_over_receipt_invtransfer
+      elsif sent?
           create_transfer
           create_fulfillment
-        elsif received?
-          # check transfer & fillfillment again given vend business processes/timing
-          create_transfer
-          create_fulfillment
-          create_receipt
-        end
+         elsif received?
+              # catch all incase vend sequence gets mixed up
+              create_transfer
+              create_fulfillment
+              create_receipt
       end
     end
 
@@ -115,7 +116,7 @@ module NetsuiteIntegration
     def not_pending_over_receipts
       transfer_payload[:line_items].each do |i|
         @over_receipt_items << {sku: i[:sku],
-                                quantity: i[:quantity],
+                                received: i[:received],
                                 nsproduct_id: i[:nsproduct_id]}
       end
     end
@@ -132,13 +133,13 @@ module NetsuiteIntegration
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
           # capture themn and issue another transfer for the balance
-          over_receipt=(receipt_item.quantity_remaining.to_i-item[:quantity].to_i) *-1
+          over_receipt=(receipt_item.quantity_remaining.to_i-item[:received].to_i) *-1
           if over_receipt >0
               @over_receipt_items << {sku: receipt_item.item.name,
-                                    quantity:over_receipt,
+                                    received:over_receipt,
                                     nsproduct_id: receipt_item.item.internal_id}
           end
-          receipt_item.quantity = item[:quantity]
+          receipt_item.quantity = item[:received]
           receipt_item.item_receive = true
           if receipt_item.location.internal_id.nil?
             receipt_item.location = { internal_id: transfer_location }
@@ -244,47 +245,48 @@ module NetsuiteIntegration
             end
         else
           not_pending_over_receipts
-      end
-
-      if @over_receipt_items.any?
+        end
         create_over_receipt_invtransfer
       end
     end
-  end
 
 
-  def create_over_receipt_invtransfer
-    @invtransfer = NetSuite::Records::InventoryTransfer.new
-    invtransfer.external_id = transfer_id+'OVER'
-    invtransfer.memo = transfer_memo + ' Over Receipt'
-    invtransfer.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
+    def create_over_receipt_invtransfer
 
-    invtransfer.location = { internal_id: transfer_source_location }
-    invtransfer.transfer_location = { internal_id: transfer_location }
-    invtransfer.inventory_list = build_over_receipt_item_list
-    # we can sometimes receive transfers were everything is zero!
-    if invtransfer.inventory_list.inventory.present?
-      invtransfer.add
-      if invtransfer.errors.any? { |e| e.type != 'WARN' }
-        raise "Inv Tranfer(over rec) create failed: #{invtransfer.errors.map(&:message)}"
-      else
-        line_item = { transfer_id: transfer_id,
-                      netsuite_id: invtransfer.internal_id,
-                      description: transfer_memo,
-                      type: 'transfer_order' }
-        ExternalReference.record :transfer_order, transfer_id,
-                                 { netsuite: line_item },
-                                 netsuite_id: invtransfer.internal_id
+      if @over_receipt_items.any?
+          @invtransfer = NetSuite::Records::InventoryTransfer.new
+          invtransfer.external_id = transfer_id+'OVER'
+          invtransfer.memo = transfer_memo + ' Over Receipt'
+          invtransfer.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
+
+          invtransfer.location = { internal_id: transfer_source_location }
+          invtransfer.transfer_location = { internal_id: transfer_location }
+          invtransfer.inventory_list = build_over_receipt_item_list
+          # we can sometimes receive transfers were everything is zero!
+          if invtransfer.inventory_list.inventory.present?
+            invtransfer.add
+            if invtransfer.errors.any? { |e| e.type != 'WARN' }
+              raise "Inv Tranfer(over rec) create failed: #{invtransfer.errors.map(&:message)}"
+            else
+              line_item = { transfer_id: transfer_id,
+                            netsuite_id: invtransfer.internal_id,
+                            description: transfer_memo,
+                            type: 'transfer_order' }
+              ExternalReference.record :transfer_order, transfer_id,
+                                      { netsuite: line_item },
+                                      netsuite_id: invtransfer.internal_id
+            end
+          end
       end
     end
-  end
+
 
 
   def build_over_receipt_item_list
     line = 0
     invtransfer_items = @over_receipt_items.map do |item|
       # do not process zero qty transfers
-      next unless item[:quantity].to_i != 0
+      next unless item[:received].to_i != 0
       line += 1
       nsproduct_id = item[:nsproduct_id]
 
@@ -304,14 +306,14 @@ module NetsuiteIntegration
       end
       NetSuite::Records::InventoryTransferInventory.new(item: { internal_id: nsproduct_id },
                                                         line: line,
-                                                        adjust_qty_by: item[:quantity])
+                                                        adjust_qty_by: item[:received])
     end
       NetSuite::Records::InventoryTransferInventoryList.new(replace_all: true,
                                                           inventory: invtransfer_items.compact)
   end
 
 
-  def create_transfer
+    def create_transfer
       if new_transfer?
         @transfer = NetSuite::Records::TransferOrder.new
         transfer.external_id = transfer_name
@@ -337,5 +339,6 @@ module NetsuiteIntegration
         end
       end
     end
+
   end
 end
