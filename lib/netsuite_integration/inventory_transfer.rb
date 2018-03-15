@@ -40,10 +40,6 @@ module NetsuiteIntegration
       @transfer_memo ||= transfer_payload['transfer_memo']
     end
 
-    def transfer_identifier
-      @transfer_identifier ||= transfer_payload['transfer_identifier']
-    end
-
     def transfer_location
       @transfer_location ||= transfer_payload['location']
     end
