@@ -316,13 +316,13 @@ module NetsuiteIntegration
                      .select { |e| e[:location_id][:@internal_id] == location.to_s }
                      .first
 
-      cost = if itemlocation[:average_cost_mli].to_i != 0
-               itemlocation[:average_cost_mli].to_i
+      cost = if itemlocation[:average_cost_mli].to_f != 0
+               itemlocation[:average_cost_mli].to_f
              elsif invitem.average_cost != 0
                invitem.average_cost
-             elsif itemlocation[:last_purchase_price_mli].to_i != 0
-               itemlocation[:last_purchase_price_mli]
-             elsif invitem.last_purchase_price.to_i != 0
+             elsif itemlocation[:last_purchase_price_mli].to_f != 0
+               itemlocation[:last_purchase_price_mli].to_f
+             elsif invitem.last_purchase_price != 0
                invitem.last_purchase_price
             end
     end

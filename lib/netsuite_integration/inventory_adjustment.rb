@@ -121,11 +121,11 @@ module NetsuiteIntegration
                          .select { |e| e[:location_id][:@internal_id] == adjustment_location.to_s }
                          .first
 
-          if itemlocation[:average_cost_mli].to_i == 0
+          if itemlocation[:average_cost_mli].to_f == 0
             # can only set unit price on takeon
-            if itemlocation[:last_purchase_price_mli].to_i != 0
+            if itemlocation[:last_purchase_price_mli].to_f != 0
               unit_cost = itemlocation[:last_purchase_price_mli]
-            elsif invitem.last_purchase_price.to_i != 0
+            elsif invitem.last_purchase_price.to_f != 0
               unit_cost = invitem.last_purchase_price
             elsif item[:cost].present?
               unit_cost = item[:cost]
