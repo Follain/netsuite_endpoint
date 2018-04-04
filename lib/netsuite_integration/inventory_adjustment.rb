@@ -9,6 +9,8 @@ module NetsuiteIntegration
       @config = config
       @adjustment_payload = if sales_inv_adjustment?
                               payload[:sales_inv_adjustment]
+                            elsif transfer_order?
+                              payload[:transfer_order]
                             else
                               payload[:inventory_adjustment]
                             end
@@ -80,19 +82,19 @@ module NetsuiteIntegration
     end
 
     def find_sku(sku)
-          # fix correct reference else abort if sku not found! & return object
-          invitem = inventory_item_service.find_by_item_id(sku)
-          if invitem.present?
-            nsproduct_id = invitem.internal_id
-            line_obj = { sku: sku, netsuite_id: invitem.internal_id,
-                         description: invitem.purchase_description }
-            ExternalReference.record :product, sku, { netsuite: line_obj },
-                                     netsuite_id: invitem.internal_id
-          else
-            raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
-          end
+      # fix correct reference else abort if sku not found! & return object
+      invitem = inventory_item_service.find_by_item_id(sku)
+      if invitem.present?
+        nsproduct_id = invitem.internal_id
+        line_obj = { sku: sku, netsuite_id: invitem.internal_id,
+                     description: invitem.purchase_description }
+        ExternalReference.record :product, sku, { netsuite: line_obj },
+                                 netsuite_id: invitem.internal_id
+      else
+        raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
+      end
 
-          invitem
+      invitem
     end
 
     def build_item_list
@@ -103,7 +105,7 @@ module NetsuiteIntegration
         line += 1
         nsproduct_id = item[:nsproduct_id]
 
-        #fetch ns key id not available
+        # fetch ns key id not available
         if nsproduct_id.nil?
           # fix correct reference else abort if sku not found!
           invitem = find_sku(item[:sku])
@@ -162,10 +164,6 @@ module NetsuiteIntegration
           raise "GL Account: #{adjustment_account} not found!"
         end
 
-        if adjustment_dept.blank?
-          raise "GL Department: #{adjustment_dept} not found!"
-        end
-
         @adjustment = NetSuite::Records::InventoryAdjustment.new
         adjustment.external_id = adjustment_id
         adjustment.memo = adjustment_memo
@@ -192,12 +190,17 @@ module NetsuiteIntegration
                                        adjustment_identifier,
                                        { netsuite: line_item },
                                        netsuite_id: adjustment.internal_id
+            elsif transfer_order?
+              ExternalReference.record :transfer_order,
+                                       adjustment_id,
+                                       { netsuite: line_item },
+                                       netsuite_id: adjustment.internal_id
             else
               ExternalReference.record :inventory_adjustment,
                                        adjustment_id,
                                        { netsuite: line_item },
                                        netsuite_id: adjustment.internal_id
-             end
+            end
           end
         end
       end
