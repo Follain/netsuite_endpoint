@@ -55,7 +55,7 @@ module NetsuiteIntegration
                     operator: 'equalTo',
                     type: 'SearchLongField',
                     value: id }] },
-                                                preferences: default_preferences).results.first
+            preferences: default_preferences).results.first
       end
 
       # See ItemTypes examples here https://system.netsuite.com/help/helpcenter/en_US/SchemaBrowser/lists/v2013_2_0/accountingTypes.html#listAcctTyp:ItemType
@@ -76,6 +76,18 @@ module NetsuiteIntegration
         else
           %w[_inventoryItem _assembly]
         end
+      end
+
+      def search_all
+        search=NetSuite::Records::InventoryItem.search(
+          criteria: {
+            basic: basic_criteria
+          },
+          preferences: {
+            pageSize: 100,
+            bodyFieldsOnly: false
+          }
+        )
       end
 
       private

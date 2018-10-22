@@ -72,7 +72,7 @@ module NetsuiteIntegration
       def fieldmap(map,line,field)
         if !map.nil?
           if !line[map].nil?
-              lookup=TransactionLookupMap[(map.to_s+'_'+line[map].downcase).to_sym]
+              lookup=TransactionLookupMap[(map.to_s+'_'+line[map].downcase.gsub(" ",'')).to_sym]
           end
         end
 
