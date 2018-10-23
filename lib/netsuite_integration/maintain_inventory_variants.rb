@@ -41,10 +41,7 @@ module NetsuiteIntegration
         stock_desc=description.rstrip[0,21]
 
         if !item.present?
-          cfl.custitemmg_thumbnail_url={internal_id:88}
-          cfl.custitemmg_thumbnail_url=image
-          item = NetSuite::Records::InventoryItem.new(
-                     item_id: sku,
+          item = NetSuite::Records::InventoryItem.new(item_id: sku,
                      external_id: ext_id,
                      tax_schedule: { internal_id: taxschedule },
                      upc_code: sku,
@@ -53,8 +50,13 @@ module NetsuiteIntegration
                      vendor_name: description[0, 60],
                      purchase_description: description,
                      stock_description: stock_desc,
-                     custom_field_list: cfl
-                   )
+                     custom_field_list: {custom_field:{reference_id_type:'script_id',
+                                          script_id:'custitemmg_thumbnail_url',
+                                          internal_id:88,
+                                          type:'platformCore:StringCustomFieldRef'},
+                                          value:image}
+
+                     )
           item.add
           else
           ns_image =if item.custom_field_list.respond_to?(:custitemmg_thumbnail_url)
@@ -90,13 +92,11 @@ module NetsuiteIntegration
           ExternalReference.record :product, sku, { netsuite: line_item },
                                    netsuite_id: item.internal_id
         end
-
     end
 
     def inventory_item_service
       @inventory_item_service ||= NetsuiteIntegration::Services::InventoryItem
                                   .new(@config)
     end
-
     end
   end
