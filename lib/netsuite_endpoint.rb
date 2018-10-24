@@ -60,12 +60,11 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
     end
   end
 
-  def self.fetch_endpoint(path, service_class, key)
+  def self.fetch_endpoint(path, service_class, key, sel_filter)
     post path do
       service = service_class.new(@config)
-
       service.messages.each do |message|
-        add_object key, message
+        add_object key, message.merge({sel_filter:sel_filter})
       end
 
       if service.collection.any?
@@ -84,19 +83,52 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
 
   fetch_endpoint '/get_products',
                  NetsuiteIntegration::Product,
-                 'product'
+                 'product',
+                 nil
+  fetch_endpoint '/get_inventory/bh',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '9'
+  fetch_endpoint '/get_inventory/se',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '12'
+  fetch_endpoint '/get_inventory/uv',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '25'
+  fetch_endpoint '/get_inventory/br',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '26'
+  fetch_endpoint '/get_inventory/kn',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '27'
+  fetch_endpoint '/get_inventory/gw',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 '31'
+  fetch_endpoint '/get_inventory/all',
+                 NetsuiteIntegration::Inventory,
+                 'inventory',
+                 nil
   fetch_endpoint '/get_purchase_orders',
                  NetsuiteIntegration::PurchaseOrder,
-                 'purchase_order'
+                 'purchase_order',
+                 nil
   fetch_endpoint '/get_work_orders',
                  NetsuiteIntegration::WorkOrder,
-                 'work_order'
+                 'work_order',
+                 nil
   fetch_endpoint '/get_tranfer_orders',
                  NetsuiteIntegration::TransferOrder,
-                 'transfer_order'
+                 'transfer_order',
+                 nil
   fetch_endpoint '/get_vendors',
                  NetsuiteIntegration::Vendor,
-                 'vendor'
+                 'vendor',
+                 nil
 
   post '/add_inventory_adjustment' do
     NetsuiteIntegration::InventoryAdjustment.new(@config, @payload)
@@ -137,6 +169,12 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
   post '/maintain_inventory_item' do
     NetsuiteIntegration::MaintainInventoryItem.new(@config, @payload)
     summary = 'Netsuite Item Created/Updated '
+    result 200, summary
+  end
+
+  post '/maintain_inventory_variants' do
+    NetsuiteIntegration::MaintainInventoryVariants.new(@config, @payload)
+    summary = 'Netsuite Variant Created/Updated '
     result 200, summary
   end
 
