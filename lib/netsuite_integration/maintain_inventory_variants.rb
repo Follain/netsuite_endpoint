@@ -7,11 +7,14 @@ module NetsuiteIntegration
         @config = config
 
         @inventoryitem_payload = payload[:product]
-
+        errors=[]
         inventoryitem_payload['variants'].map do |line_item|
           if line_item['changed']
               add_sku(line_item)
           end
+        end
+        if errors.present?
+          raise errors
         end
       end
 
@@ -31,11 +34,13 @@ module NetsuiteIntegration
                  end
 
         # always find sku using internal id incase of sku rename
-        item = if !ns_id.nil?
-                 inventory_item_service.find_by_internal_id(ns_id)
-               else
-                 inventory_item_service.find_by_item_id(sku)
-               end
+        if !ns_id.nil?
+            item=inventory_item_service.find_by_internal_id(ns_id)
+        end
+        # check again conversion issues
+        if !item.present?
+          item=inventory_item_service.find_by_item_id(sku)
+        end
 
         # exit if no changes limit tye amout of nestuite calls/changes
         stock_desc=description.rstrip[0,21]
@@ -85,7 +90,8 @@ module NetsuiteIntegration
       end
 
         if item.errors.present? { |e| e.type != 'WARN' }
-          raise "Item Update/create failed: #{item.errors.map(&:message)}"
+          byebug
+          errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
         else
           line_item = { sku: sku, netsuite_id: item.internal_id,
                         description: description ,image: image}
