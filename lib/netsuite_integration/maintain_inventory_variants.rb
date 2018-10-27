@@ -14,7 +14,7 @@ module NetsuiteIntegration
           end
         end
         if errors.present?
-          raise errors
+          raise "update/create errors #{errors.first}"
         end
       end
 

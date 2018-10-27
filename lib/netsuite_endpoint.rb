@@ -55,8 +55,7 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
         wsdl_domain  ENV['NETSUITE_WSDL_DOMAIN'] || 'system.netsuite.com'
 
         read_timeout 240
-        #log_level    :info
-        log_level    :debug
+        log_level    :info
       end
     end
   end
