@@ -39,7 +39,7 @@ module NetsuiteIntegration
         end
         # check again conversion issues
         if !item.present?
-          item=inventory_item_service.find_by_item_id(sku)
+          item=inventory_item_service.find_by_item_id_all(sku)
         end
 
         # exit if no changes limit tye amout of nestuite calls/changes

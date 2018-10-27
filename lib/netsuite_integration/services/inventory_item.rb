@@ -49,6 +49,17 @@ module NetsuiteIntegration
         ).results.first
       end
 
+      def find_by_item_id_all(item_id)
+        NetSuite::Records::InventoryItem.search(
+          criteria: {
+            basic: [{ field: 'itemId',
+                                           value: item_id,
+                                           operator: 'is' }]
+          },
+          preferences: default_preferences
+        ).results.first
+      end
+
       def find_by_internal_id(id)
         NetSuite::Records::InventoryItem.search(criteria:
         { basic: [{ field: 'internalIdNumber',
