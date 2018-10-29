@@ -1,5 +1,5 @@
 module NetsuiteIntegration
-    class MaintainInventoryVariants < Base
+  class MaintainInventoryVariants < Base
       attr_reader :config, :payload, :ns_inventoryitem, :inventoryitem_payload
 
       def initialize(config, payload = {})
@@ -74,7 +74,7 @@ module NetsuiteIntegration
               cfl=item.custom_field_list
               cfl.custitemmg_thumbnail_url={internal_id:88}
               cfl.custitemmg_thumbnail_url=image
-             if item.record_type.in?('listAcct:InventoryItem')
+              if item.record_type.in?('listAcct:InventoryItem') && item.is_inactive=false
                 item.update(item_id: sku,
                   external_id: ext_id,
                   tax_schedule: { internal_id: taxschedule },
@@ -86,8 +86,8 @@ module NetsuiteIntegration
                   custom_field_list: cfl
                 )
               end
-          end
-      end
+            end
+        end
 
         if item.errors.present? { |e| e.type != 'WARN' }
           errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
@@ -103,5 +103,5 @@ module NetsuiteIntegration
       @inventory_item_service ||= NetsuiteIntegration::Services::InventoryItem
                                   .new(@config)
     end
-    end
   end
+end
