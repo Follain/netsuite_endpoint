@@ -93,7 +93,7 @@ module NetsuiteIntegration
           errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
         else
           line_item = { sku: sku, netsuite_id: item.internal_id,
-                        description: description ,image: image}
+                        description: description ,image: image, cost: cost}
           ExternalReference.record :product, sku, { netsuite: line_item },
                                    netsuite_id: item.internal_id
         end
