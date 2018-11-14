@@ -34,7 +34,7 @@ module NetsuiteIntegration
           stock_description: description[0, 21]
         )
         item.add
-      elsif item.record_type.in?('listAcct:InventoryItem') && item.is_inactive==false
+      elsif item.record_type.include?('InventoryItem') && item.is_inactive==false
             item.update(
               item_id: sku,
               external_id: ext_id,
