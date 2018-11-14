@@ -12,7 +12,7 @@ module NetsuiteIntegration
       item = if !nsproduct_id.nil?
                inventory_item_service.find_by_internal_id(nsproduct_id)
              else
-               inventory_item_service.find_by_item_id(sku)
+               inventory_item_service.find_by_item_id_all(sku)
              end
 
       # awlays keep external_id in numeric format
