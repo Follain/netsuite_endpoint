@@ -7,14 +7,14 @@ module NetsuiteIntegration
         @config = config
 
         @inventoryitem_payload = payload[:product]
-        errors=[]
+        @errors=[]
         inventoryitem_payload['variants'].map do |line_item|
           if line_item['changed']
               add_sku(line_item)
           end
         end
-        if errors.present?
-          raise "update/create errors #{errors.first}"
+        if @errors.present?
+          raise "update/create errors #{@errors.first}"
         end
       end
 
@@ -90,7 +90,7 @@ module NetsuiteIntegration
         end
 
         if item.errors.present? { |e| e.type != 'WARN' }
-          errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
+          @errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
         else
           line_item = { sku: sku, netsuite_id: item.internal_id,
                         description: description ,image: image, cost: cost}
