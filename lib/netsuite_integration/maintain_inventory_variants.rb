@@ -74,7 +74,10 @@ module NetsuiteIntegration
               cfl=item.custom_field_list
               cfl.custitemmg_thumbnail_url={internal_id:88}
               cfl.custitemmg_thumbnail_url=image
-              if item.record_type.include?('InventoryItem') && item.is_inactive==false
+              #ignore assemblies
+              if item.record_type.include?('InventoryItem') &&
+                item.is_inactive==false &&
+                item.member_list.item_member.empty?
                 item.update(item_id: sku,
                   external_id: ext_id,
                   tax_schedule: { internal_id: taxschedule },
