@@ -109,6 +109,7 @@ module NetsuiteIntegration
         if nsproduct_id.nil?
           # fix correct reference else abort if sku not found!
           invitem = find_sku(item[:sku])
+          nsproduct_id = invitem.internal_id
         end
 
         # check average price and fill it in ..ns has habit of Zeroing it out when u hit zero quantity
