@@ -45,7 +45,7 @@ module NetsuiteIntegration
               # dont use causes too many process issuses !! display_name: description[0,40],
               tax_schedule: { internal_id: taxschedule },
               upc_code: sku,
-              cost:  item.cost || cost
+              cost:  item.cost || cost,
               vendor_name: description[0, 60],
               purchase_description: description,
               stock_description: description[0, 21]
