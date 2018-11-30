@@ -12,11 +12,11 @@ module NetsuiteIntegration
 
       # always find sku using internal id incase of sku rename
       if  !nsproduct_id.nil?
-          item=inventory_item_service.find_by_internal_id(!nsproduct_id)
+          item=inventory_item_service.find_by_internal_id(nsproduct_id)
       end
       # check again conversion issues
       if !item.present?
-        item=inventory_item_service.find_by_item_id_all(sku)
+          item=inventory_item_service.find_by_item_id_all(sku)
       end
 
       # awlays keep external_id in numeric format
