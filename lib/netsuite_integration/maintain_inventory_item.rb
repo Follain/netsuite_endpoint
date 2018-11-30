@@ -9,11 +9,15 @@ module NetsuiteIntegration
       @inventoryitem_payload = payload[:product]
 
       # always find sku using internal id incase of sku rename
-      item = if !nsproduct_id.nil?
-               inventory_item_service.find_by_internal_id(nsproduct_id)
-             else
-               inventory_item_service.find_by_item_id_all(sku)
-             end
+
+      # always find sku using internal id incase of sku rename
+      if  !nsproduct_id.nil?
+          item=inventory_item_service.find_by_internal_id(!nsproduct_id)
+      end
+      # check again conversion issues
+      if !item.present?
+        item=inventory_item_service.find_by_item_id_all(sku)
+      end
 
       # awlays keep external_id in numeric format
       ext_id = if sku.is_a? Numeric
