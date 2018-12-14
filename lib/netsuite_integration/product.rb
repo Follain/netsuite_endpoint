@@ -8,7 +8,7 @@ module NetsuiteIntegration
     end
 
     def messages
-      @messages ||= standalone_products + matrix_items
+      @messages ||= standalone_products
     end
 
     def last_modified_date
