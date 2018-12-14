@@ -129,7 +129,7 @@ module NetsuiteIntegration
       # for those not present in the shipment payload
       @receipt.item_list.items.each do |receipt_item|
         item = transfer_payload[:line_items].find do |i|
-          i[:sku] == receipt_item.item.name
+          i[:sku] == receipt_item.item.name.split(' ')[0]
         end
 
         if item
@@ -137,7 +137,7 @@ module NetsuiteIntegration
           # capture themn and issue another transfer for the balance
           over_receipt = (receipt_item.quantity_remaining.to_i - item[:received].to_i) * -1
           if over_receipt > 0
-            @over_receipt_items << { sku: receipt_item.item.name,
+            @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
                                      received: over_receipt,
                                      nsproduct_id: receipt_item.item.internal_id }
           end
@@ -159,7 +159,7 @@ module NetsuiteIntegration
       # for those not present in the shipment payload
       fulfillment.item_list.items.each do |fulfillment_item|
         item = transfer_payload[:line_items].find do |i|
-          i[:sku] == fulfillment_item.item.name
+          i[:sku] == fulfillment_item.item.name.split(' ')[0]
         end
 
         fulfillment_item.quantity = if item

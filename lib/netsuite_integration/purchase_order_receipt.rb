@@ -82,7 +82,7 @@ module NetsuiteIntegration
       # for those not present in the shipment payload
       @receipt.item_list.items.each do |receipt_item|
         item = order_payload[:line_items].find do |i|
-          i[:sku] == receipt_item.item.name
+          i[:sku] == receipt_item.item.name.split(' ')[0]
         end
 
         #required for stitch
@@ -106,7 +106,7 @@ module NetsuiteIntegration
 
     def update_po_overreceipt(ns_order)
       ns_order.item_list.items.each do |order_item|
-        item = order_payload[:line_items].find { |i| i[:sku] == order_item.item.name }
+        item = order_payload[:line_items].find { |i| i[:sku] == order_item.item.name.split(' ')[0] }
         next unless item
         # reopen po if it has been closed by mistake!
         # closed status must be 'F' not false ... ns inconsistency

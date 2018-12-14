@@ -41,9 +41,13 @@ module NetsuiteIntegration
       def find_by_item_id(item_id)
         NetSuite::Records::InventoryItem.search(
           criteria: {
-            basic: basic_criteria_all + [{ field: 'itemId',
-                                           value: item_id,
-                                           operator: 'is' }]
+            basic: [{ field: 'itemId',
+                            value: item_id,
+                            operator: 'startsWith'},
+                    {
+                      field: 'isInactive',
+                      value: false
+                    }]
           },
           preferences: default_preferences
         ).results.first
@@ -53,8 +57,13 @@ module NetsuiteIntegration
         NetSuite::Records::InventoryItem.search(
           criteria: {
             basic: [{ field: 'itemId',
-                                           value: item_id,
-                                           operator: 'is' }]
+                      value: item_id,
+                      operator: 'startsWith' },
+                    {
+                      field: 'isInactive',
+                      value: false
+                    }
+                    ]
           },
           preferences: default_preferences
         ).results.first
@@ -122,7 +131,7 @@ module NetsuiteIntegration
 
       def default_preferences
         {
-          pageSize: 80,
+          pageSize: 1000,
           bodyFieldsOnly: false
         }
       end
