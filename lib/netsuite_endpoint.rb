@@ -81,6 +81,10 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
     end
   end
 
+  fetch_endpoint '/get_locations',
+                  NetsuiteIntegration::Location,
+                  'outlet',
+                  nil
   fetch_endpoint '/get_products',
                  NetsuiteIntegration::Product,
                  'product',
