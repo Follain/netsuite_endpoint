@@ -168,7 +168,7 @@ module NetsuiteIntegration
         @adjustment = NetSuite::Records::InventoryAdjustment.new
         adjustment.external_id = adjustment_id
         adjustment.memo = adjustment_memo
-        adjustment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(adjustment_date.to_datetime)
+        adjustment.tran_date = adjustment_date
 
         adjustment.account = { internal_id: adjustment_account }
         if adjustment_dept.present?
