@@ -61,7 +61,7 @@ module NetsuiteIntegration
     end
 
     def received_date
-      @received_date ||= order_payload['received_date']
+      @received_date=Date.parse(order_payload['received_date']).strftime( "%F")
     end
 
     def receipt_memo
