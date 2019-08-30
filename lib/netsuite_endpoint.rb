@@ -152,6 +152,12 @@ class NetsuiteEndpoint < EndpointBase::Sinatra::Base
     result 200, summary
   end
 
+  post '/sales_order_fulfillment' do
+    NetsuiteIntegration::SalesOrderfulfillment.new(@config, @payload)
+    summary = "Netsuite Sales Order Fulfillment Created "
+    result 200, summary
+  end
+
   post '/add_purchase_order_receipt' do
     NetsuiteIntegration::PurchaseOrderReceipt.new(@config, @payload)
     summary = 'Netsuite Receipt Created '
