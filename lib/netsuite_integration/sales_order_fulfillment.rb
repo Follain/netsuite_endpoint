@@ -19,7 +19,7 @@ module NetsuiteIntegration
       end
 
       def new_fulfillment?
-        new_fulfillment = !find_fulfillment_by_ext_id(salesorder_id+'-'+tracking_number)
+        new_fulfillment = !find_fulfillment_by_ext_id(salesorder_id + '-' + tracking_number)
       end
 
       def fulfillment_date
@@ -33,6 +33,10 @@ module NetsuiteIntegration
 
       def tracking_number
         salesorder_payload['tracking'].to_s
+      end
+
+      def package_desc
+        salesorder_payload['carrier'] + '-' + salesorder_payload['service_level']
       end
 
       def location_id
@@ -58,10 +62,8 @@ module NetsuiteIntegration
       end
 
       def build_fulfillment_package_list
-        package=NetSuite::Records::ItemFulfillmentPackage.new(tracking:tracking_number)
-
-        NetSuite::Records::ItemFulfillmentPackageList.new(replace_all: true,
-          package: package)
+        package=NetSuite::Records::ItemFulfillmentPackage.new(package_tracking_number:tracking_number,package_weight:1, package_descr: package_desc)
+        NetSuite::Records::ItemFulfillmentPackageList.new(package: package)
       end
 
       def inventory_item_service
@@ -90,6 +92,7 @@ module NetsuiteIntegration
           fulfillment.memo = 'QL Shipment'
           fulfillment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(fulfillment_date.to_datetime)
           build_fulfillment_item_list
+          fulfillment.package_list=build_fulfillment_package_list
 
           fulfillment.add
 
