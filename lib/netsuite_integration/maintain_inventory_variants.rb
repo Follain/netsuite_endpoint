@@ -93,7 +93,7 @@ module NetsuiteIntegration
         end
 
         if item.errors.present? { |e| e.type != 'WARN' }
-          if !item.errors.map(&:message).include?('Uniqueness')
+          if !item.errors.map(&:message).first.include?('Uniqu')
             @errors<< "Item Update/create failed: #{item.errors.map(&:message)}"
           end
         else
