@@ -53,11 +53,15 @@ module NetsuiteIntegration
           end
           fulfillment_item.location = {internal_id: salesorder_payload[:location_id]}
 
-          fulfillment_item.quantity = if item
-                                        item[:quantity]
-                                      else
-                                        0
-                                      end
+            if item && quantity_remaining !=0
+              fulfillment_item.quantity=item[:quantity]
+              else
+                if fulfillment_item.item.name.include?("giftcard")
+                   fulfillment_item.quantity=quantity_remaining
+                else
+                    0
+                end
+              end
         end
       end
 
