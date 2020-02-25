@@ -54,6 +54,7 @@ module NetsuiteIntegration
                      last_purchase_price: cost,
                      vendor_name: description[0, 60],
                      purchase_description: description,
+                     sales_description: description,
                      stock_description: stock_desc,
                      custom_field_list: {custom_field:{reference_id_type:'script_id',
                                           script_id:'custitemmg_thumbnail_url',
@@ -85,6 +86,7 @@ module NetsuiteIntegration
                   cost: item.cost||cost,
                   vendor_name: description[0, 60],
                   purchase_description: description,
+                  sales_description: description,
                   stock_description: stock_desc,
                   custom_field_list: cfl
                 )
