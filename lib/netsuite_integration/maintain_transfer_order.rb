@@ -8,7 +8,7 @@ module NetsuiteIntegration
       super(config, payload)
       @config = config
       @transfer_payload = payload[:transfer_order]
-      @transfer = find_transfer_by_ext_id(transfer_name)
+      @transfer = find_transfer_by_tran_id(transfer_name)
       if transfer_closed? && received?
         not_pending_over_receipts
         create_over_receipt_invtransfer
@@ -25,17 +25,17 @@ module NetsuiteIntegration
 
     def pending_receipt?
       @transfer&.order_status
-               &.in?(%w(_pendingReceipt _pendingReceiptPartFulfilled))
+               &.in?(%w[_pendingReceipt _pendingReceiptPartFulfilled])
     end
 
     def pending_fulfillment?
       @transfer&.order_status
-               &.in?(%w(_pendingFulfillment _pendingReceiptPartFulfilled)) ||
-      @transfer&.order_status.nil?
+               &.in?(%w[_pendingFulfillment _pendingReceiptPartFulfilled]) ||
+        @transfer&.order_status.nil?
     end
 
     def transfer_closed?
-      @transfer&.order_status&.in?(%w(_closed))
+      @transfer&.order_status&.in?(%w[_closed])
     end
 
     def new_transfer?
@@ -43,11 +43,11 @@ module NetsuiteIntegration
     end
 
     def new_fulfillment?
-      new_fulfillment = !find_fulfillment_by_ext_id(transfer_name + 'SENT')
+      !find_fulfillment_by_ext_id(transfer_name + 'SENT')
     end
 
     def new_receipt?
-      new_receipt = !find_receipt_by_ext_id(transfer_id)
+      !find_receipt_by_ext_id(transfer_id)
     end
 
     def sent?
@@ -87,25 +87,22 @@ module NetsuiteIntegration
       transfer_items = transfer_payload[:line_items].map do |item|
         # do not process zero qty transfers
         next unless item[:quantity].to_i != 0
-        line += 1
-        nsproduct_id = item[:nsproduct_id]
 
-        if nsproduct_id.nil?
-          # fix correct reference else abort if sku not found!
-          sku = item[:sku]
-          invitem = inventory_item_service.find_by_item_id(sku)
-          if invitem.present?
-            nsproduct_id = invitem.internal_id
-            line_obj = { sku: sku, netsuite_id: invitem.internal_id,
-                         description: invitem.purchase_description }
-            ExternalReference.record :product, sku, { netsuite: line_obj },
-                                     netsuite_id: invitem.internal_id
-          else
-            raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
-          end
+        line += 1
+
+        # fix correct reference else abort if sku not found!
+        sku = item[:sku]
+        invitem = inventory_item_service.find_by_item_id(sku)
+        if invitem.present?
+          nsproduct_id = invitem.internal_id
+          line_obj = { sku: sku, netsuite_id: invitem.internal_id,
+                       description: invitem.purchase_description }
+          ExternalReference.record :product, sku, { netsuite: line_obj },
+                                   netsuite_id: invitem.internal_id
         else
-          invitem = inventory_item_service.find_by_internal_id(nsproduct_id)
+          raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
         end
+
         NetSuite::Records::TransferOrderItem.new(item: { internal_id: nsproduct_id },
                                                  rate: item_cost(invitem, transfer_source_location),
                                                  line: line,
@@ -186,6 +183,18 @@ module NetsuiteIntegration
       # Silence the error
       # We don't care that the record was not found
     rescue NetSuite::RecordNotFound
+    end
+
+    def find_transfer_by_tran_id(tran_id)
+      NetSuite::Records::TransferOrder.search({
+                                                criteria: {
+                                                  basic: {
+                                                    field: 'tranId',
+                                                    operator: 'equalTo',
+                                                    value: tran_id
+                                                  }
+                                                }
+                                              }).results.first
     end
 
     def find_receipt_by_ext_id(id)
@@ -285,22 +294,19 @@ module NetsuiteIntegration
       invtransfer_items = @over_receipt_items.map do |item|
         # do not process zero qty transfers
         next unless item[:received].to_i != 0
-        line += 1
-        nsproduct_id = item[:nsproduct_id]
 
-        if nsproduct_id.nil?
-          # fix correct reference else abort if sku not found!
-          sku = item[:sku]
-          invitem = inventory_item_service.find_by_item_id(sku)
-          if invitem.present?
-            nsproduct_id = invitem.internal_id
-            line_obj = { sku: sku, netsuite_id: invitem.internal_id,
-                         description: invitem.purchase_description }
-            ExternalReference.record :product, sku, { netsuite: line_obj },
-                                     netsuite_id: invitem.internal_id
-          else
-            raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
-          end
+        line += 1
+        # fix correct reference else abort if sku not found!
+        sku = item[:sku]
+        invitem = inventory_item_service.find_by_item_id(sku)
+        if invitem.present?
+          nsproduct_id = invitem.internal_id
+          line_obj = { sku: sku, netsuite_id: invitem.internal_id,
+                       description: invitem.purchase_description }
+          ExternalReference.record :product, sku, { netsuite: line_obj },
+                                   netsuite_id: invitem.internal_id
+        else
+          raise "Error Item/sku missing in Netsuite, please add #{sku}!!"
         end
         NetSuite::Records::InventoryTransferInventory.new(item: { internal_id: nsproduct_id },
                                                           line: line,
@@ -316,15 +322,15 @@ module NetsuiteIntegration
                      .select { |e| e[:location_id][:@internal_id] == location.to_s }
                      .first
 
-      cost = if itemlocation[:average_cost_mli].to_f != 0
-               itemlocation[:average_cost_mli].to_f
-             elsif invitem.average_cost != 0
-               invitem.average_cost
-             elsif itemlocation[:last_purchase_price_mli].to_f != 0
-               itemlocation[:last_purchase_price_mli].to_f
-             elsif invitem.last_purchase_price != 0
-               invitem.last_purchase_price
-            end
+      if itemlocation[:average_cost_mli].to_f != 0
+        itemlocation[:average_cost_mli].to_f
+      elsif invitem.average_cost != 0
+        invitem.average_cost
+      elsif itemlocation[:last_purchase_price_mli].to_f != 0
+        itemlocation[:last_purchase_price_mli].to_f
+      elsif invitem.last_purchase_price != 0
+        invitem.last_purchase_price
+      end
     end
 
     def create_transfer
@@ -332,8 +338,8 @@ module NetsuiteIntegration
         @transfer = NetSuite::Records::TransferOrder.new
         transfer.external_id = transfer_name
         transfer.memo = transfer_memo
-        #if set to yes u cnat do partial receipts!! ... but now we have to manage the cost ourselves
-        transfer.use_item_cost_as_transfer_cost=false
+        # if set to yes u cnat do partial receipts!! ... but now we have to manage the cost ourselves
+        transfer.use_item_cost_as_transfer_cost = false
         transfer.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
         transfer.location = { internal_id: transfer_source_location }
         transfer.transfer_location = { internal_id: transfer_location }
