@@ -192,15 +192,15 @@ module NetsuiteIntegration
     end
 
     def find_transfer_by_tran_id(tran_id)
-      NetSuite::Records::TransferOrder.search({
-                                                criteria: {
-                                                  basic: {
-                                                    field: 'tranId',
-                                                    operator: 'equalTo',
-                                                    value: tran_id
-                                                  }
-                                                }
-                                              })&.results
+      NetSuite::Records::TransferOrder.search(
+        criteria: {
+          basic: [{
+            field: 'tranId',
+            operator: 'equalTo',
+            value: tran_id
+          }]
+        }
+      ).results.first
     end
 
     def find_receipt_by_ext_id(id)
