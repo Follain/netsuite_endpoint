@@ -191,13 +191,13 @@ module NetsuiteIntegration
     rescue NetSuite::RecordNotFound
     end
 
-    def find_transfer_by_tran_id(tran_id)
+    def find_transfer_by_tran_id(_tran_id)
       NetSuite::Records::TransferOrder.search(
         criteria: {
           basic: [{
             field: 'tranId',
-            operator: 'contains',
-            value: tran_id
+            operator: 'is',
+            value: transfer_name
           }]
         },
         preferences: {
