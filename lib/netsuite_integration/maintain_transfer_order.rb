@@ -195,10 +195,13 @@ module NetsuiteIntegration
         criteria: {
           basic: [{
             field: 'tranId',
-            operator: 'is',
-            value: tran_id,
-            type: 'SearchStringFieldOperator'
+            operator: 'contains',
+            value: tran_id
           }]
+        },
+        preferences: {
+          pageSize: 100,
+          bodyFieldsOnly: false
         }
       ).results.first
     end
