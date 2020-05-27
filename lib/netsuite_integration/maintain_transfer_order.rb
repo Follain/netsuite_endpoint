@@ -43,7 +43,7 @@ module NetsuiteIntegration
     end
 
     def new_transfer?
-      @transfer.present?
+      @transfer.blank?
     end
 
     def new_fulfillment?
