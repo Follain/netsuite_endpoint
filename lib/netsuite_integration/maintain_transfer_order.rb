@@ -11,9 +11,7 @@ module NetsuiteIntegration
       @transfer = find_transfer_by_tran_id(transfer_name)
       if new_transfer?
         raise "Error transfer missing in Netsuite, please add #{transfer_name}!!"
-      else
-
-        raise "transfer found in Netsuite, please add #{transfer_name}!!" end
+     end
 
       if transfer_closed? && received?
         not_pending_over_receipts
