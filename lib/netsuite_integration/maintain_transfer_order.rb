@@ -196,7 +196,7 @@ module NetsuiteIntegration
         criteria: {
           basic: [{
             field: 'tranId',
-            operator: 'is',
+            operator: 'contains',
             value: tran_id
           }]
         },
