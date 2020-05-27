@@ -9,6 +9,9 @@ module NetsuiteIntegration
       @config = config
       @transfer_payload = payload[:transfer_order]
       @transfer = find_transfer_by_tran_id(transfer_name)
+      if new_transfer?
+        raise "Error transfer missing in Netsuite, please add #{transfer_name}!!" end
+
       if transfer_closed? && received?
         not_pending_over_receipts
         create_over_receipt_invtransfer
@@ -39,7 +42,7 @@ module NetsuiteIntegration
     end
 
     def new_transfer?
-      @transfer.blank?
+      @transfer.present?
     end
 
     def new_fulfillment?
