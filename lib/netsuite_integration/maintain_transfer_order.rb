@@ -127,7 +127,7 @@ module NetsuiteIntegration
       # NetSuite will through an error when you dont return all items back
       # in the fulfillment request so we just set the quantity to 0 here
       # for those not present in the shipment payload
-      raise '@receipts'
+
       @receipt.item_list.items.each do |receipt_item|
         item = transfer_payload[:line_items].find do |i|
           i[:sku] == receipt_item.item.name.split(' ')[0]
