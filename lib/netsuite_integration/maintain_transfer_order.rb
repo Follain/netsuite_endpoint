@@ -10,7 +10,10 @@ module NetsuiteIntegration
       @transfer_payload = payload[:transfer_order]
       @transfer = find_transfer_by_tran_id(transfer_name)
       if new_transfer?
-        raise "Error transfer missing in Netsuite, please add #{transfer_name}!!" end
+        raise "Error transfer missing in Netsuite, please add #{transfer_name}!!"
+      else
+
+        raise "transfer found in Netsuite, please add #{transfer_name}!!" end
 
       if transfer_closed? && received?
         not_pending_over_receipts
@@ -198,7 +201,7 @@ module NetsuiteIntegration
                                                     value: tran_id
                                                   }
                                                 }
-                                              }).results.first
+                                              })&.results&.first
     end
 
     def find_receipt_by_ext_id(id)
