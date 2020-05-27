@@ -71,7 +71,7 @@ module NetsuiteIntegration
     end
 
     def transfer_name
-      transfer_payload['transfer_name']
+      transfer_payload['transfer_name'].strip!
     end
 
     def transfer_id
@@ -196,7 +196,8 @@ module NetsuiteIntegration
           basic: [{
             field: 'tranId',
             operator: 'is',
-            value: tran_id
+            value: tran_id,
+            type: 'SearchStringFieldOperator'
           }]
         }
       ).results.first
