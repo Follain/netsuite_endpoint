@@ -232,7 +232,7 @@ module NetsuiteIntegration
                         netsuite_tran_id: transfer.internal_id,
                         description: transfer_memo,
                         type: 'transfer_order' }
-          ExternalReference.record :transfer_order, transfer_name + status,
+          ExternalReference.record :transfer_order, transfer_name,
                                    { netsuite: line_item },
                                    netsuite_id: fulfillment.internal_id
         end
@@ -259,7 +259,7 @@ module NetsuiteIntegration
                           netsuite_tran_id: @transfer.internal_id,
                           description: transfer_memo,
                           type: 'transfer_order' }
-            ExternalReference.record :transfer_order, transfer_name + status,
+            ExternalReference.record :transfer_order, transfer_name,
                                      { netsuite: line_item },
                                      netsuite_id: receipt.internal_id
           end
