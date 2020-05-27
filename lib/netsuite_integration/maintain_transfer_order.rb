@@ -8,6 +8,7 @@ module NetsuiteIntegration
       super(config, payload)
       @config = config
       @transfer_payload = payload[:transfer_order]
+      byebug
       @transfer = find_transfer_by_tran_id(transfer_name)
       if new_transfer?
         raise "Error transfer missing in Netsuite, please add #{transfer_name}!!"
