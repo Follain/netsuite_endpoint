@@ -18,11 +18,11 @@ module NetsuiteIntegration
         not_pending_over_receipts
         create_over_receipt_invtransfer
       elsif sent?
-        create_transfer
+        # create_transfer
         create_fulfillment
       elsif received?
         # catch all incase vend sequence gets mixed up
-        create_transfer
+        # create_transfer
         create_fulfillment
         create_receipt
       end
@@ -216,10 +216,11 @@ module NetsuiteIntegration
 
     def create_fulfillment
       status = 'SENT'
-      if new_fulfillment? &&
+      byebug
+      if
          pending_fulfillment?
         @fulfillment = NetSuite::Records::ItemFulfillment.initialize @transfer
-        fulfillment.external_id = transfer_name + status
+        fulfillment.external_id = transfer_name
         fulfillment.memo = transfer_memo
         fulfillment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
         build_fulfillment_item_list
@@ -242,6 +243,7 @@ module NetsuiteIntegration
 
     def create_receipt
       @over_receipt_items = []
+      byebug
       status = 'RECEIVED'
       if new_receipt?
         if pending_receipt?
