@@ -8,11 +8,11 @@ module NetsuiteIntegration
       super(config, payload)
       @config = config
       @transfer_payload = payload[:transfer_order]
-      
-      @transfer_search= find_transfer_by_tran_id(transfer_name)
-      internal_id=@transfer_search.internal_id
+
+      @transfer_search = find_transfer_by_tran_id(transfer_name)
+      internal_id = @transfer_search.internal_id
       @transfer = find_transfer_by_int_id(internal_id)
-      
+
       if new_transfer?
         raise "Error transfer missing in Netsuite, please add #{transfer_name}!!"
       end
@@ -226,7 +226,7 @@ module NetsuiteIntegration
 
     def create_fulfillment
       status = 'SENT'
-      byebug
+
       if
          pending_fulfillment?
         @fulfillment = NetSuite::Records::ItemFulfillment.initialize @transfer
@@ -253,7 +253,7 @@ module NetsuiteIntegration
 
     def create_receipt
       @over_receipt_items = []
-      byebug
+
       status = 'RECEIVED'
       if new_receipt?
         if pending_receipt?
