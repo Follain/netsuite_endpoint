@@ -8,8 +8,11 @@ module NetsuiteIntegration
       super(config, payload)
       @config = config
       @transfer_payload = payload[:transfer_order]
-
-      @transfer = find_transfer_by_tran_id(transfer_name)
+      
+      @transfer_search= find_transfer_by_tran_id(transfer_name)
+      internal_id=@transfer_search.internal_id
+      @transfer = find_transfer_by_int_id(internal_id)
+      
       if new_transfer?
         raise "Error transfer missing in Netsuite, please add #{transfer_name}!!"
       end
@@ -35,7 +38,7 @@ module NetsuiteIntegration
 
     def pending_fulfillment?
       @transfer&.order_status
-               &.in?(%w[_pendingFulfillment _pendingReceiptPartFulfilled]) ||
+                &.in?(%w[_pendingFulfillment _pendingReceiptPartFulfilled]) ||
         @transfer&.order_status.nil?
     end
 
@@ -186,6 +189,13 @@ module NetsuiteIntegration
 
     def find_transfer_by_ext_id(id)
       NetSuite::Records::TransferOrder.get(external_id: id)
+      # Silence the error
+      # We don't care that the record was not found
+    rescue NetSuite::RecordNotFound
+    end
+
+    def find_transfer_by_int_id(id)
+      NetSuite::Records::TransferOrder.get(internal_id: id)
       # Silence the error
       # We don't care that the record was not found
     rescue NetSuite::RecordNotFound
