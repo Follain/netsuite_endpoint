@@ -21,11 +21,8 @@ module NetsuiteIntegration
         not_pending_over_receipts
         create_over_receipt_invtransfer
       elsif sent?
-        # create_transfer
         create_fulfillment
       elsif received?
-        # catch all incase vend sequence gets mixed up
-        # create_transfer
         create_fulfillment
         create_receipt
       end
@@ -51,7 +48,7 @@ module NetsuiteIntegration
     end
 
     def new_fulfillment?
-      !find_fulfillment_by_ext_id(transfer_name)
+      !find_fulfillment_by_ext_id(transfer_id)
     end
 
     def new_receipt?
@@ -201,13 +198,13 @@ module NetsuiteIntegration
     rescue NetSuite::RecordNotFound
     end
 
-    def find_transfer_by_tran_id(_tran_id)
+    def find_transfer_by_tran_id(tran_id)
       NetSuite::Records::TransferOrder.search(
         criteria: {
           basic: [{
             field: 'tranId',
             operator: 'is',
-            value: transfer_name
+            value: tran_id
           }]
         },
         preferences: {
@@ -230,7 +227,7 @@ module NetsuiteIntegration
       if
          pending_fulfillment?
         @fulfillment = NetSuite::Records::ItemFulfillment.initialize @transfer
-        fulfillment.external_id = transfer_name
+        fulfillment.external_id = transfer_id
         fulfillment.memo = transfer_memo
         fulfillment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
         build_fulfillment_item_list
