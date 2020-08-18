@@ -133,6 +133,9 @@ module NetsuiteIntegration
         item = @transfer_payload[:line_items].find do |i|
           i[:sku] == receipt_item.item.name.split(' ')[0]
         end
+        if receipt_item.item.name.split(' ')[0] == '702685964652'
+          raise "Error Item/sku  #{@receipt.item_list.item}!!#{@transfer_payload}"
+        end
 
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
