@@ -120,7 +120,7 @@ module NetsuiteIntegration
     def not_pending_over_receipts
       transfer_payload[:line_items].each do |i|
         @over_receipt_items << { sku: i[:sku],
-                                 received: i[:received],
+                                 received: i[:quantity],
                                  nsproduct_id: i[:nsproduct_id] }
       end
     end
@@ -138,14 +138,14 @@ module NetsuiteIntegration
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
           # capture themn and issue another transfer for the balance
-          rec_qty = item[:received] || item[:quantity]
-          over_receipt = (receipt_item.quantity_remaining.to_i - rec_qty.to_i) * -1
+
+          over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i) * -1
           if over_receipt > 0
             @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
                                      received: over_receipt,
                                      nsproduct_id: receipt_item.item.internal_id }
           end
-          receipt_item.quantity = rec_qty
+          receipt_item.quantity = item[:quantity]
           receipt_item.item_receive = true
           if receipt_item.location.internal_id.nil?
             receipt_item.location = { internal_id: transfer_location }
@@ -264,7 +264,7 @@ module NetsuiteIntegration
           receipt.add
 
           if receipt.errors.any? { |e| e.type != 'WARN' }
-            raise "Receipt create failed: #{receipt.errors.map(&:message)}"
+            raise "Receipt create failed: #{@transfer_payload}  #{receipt.errors.map(&:message)}"
           else
             line_item = { transfer_name: transfer_name,
                           netsuite_tran_id: @transfer.internal_id,
