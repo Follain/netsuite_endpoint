@@ -138,7 +138,7 @@ module NetsuiteIntegration
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
           # capture themn and issue another transfer for the balance
-          rec_qty = item[:received] || tem[:quantity]
+          rec_qty = item[:received] || item[:quantity]
           over_receipt = (receipt_item.quantity_remaining.to_i - rec_qty.to_i) * -1
           if over_receipt > 0
             @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
