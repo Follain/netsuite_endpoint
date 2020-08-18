@@ -117,7 +117,7 @@ module NetsuiteIntegration
     end
 
     def not_pending_over_receipts
-      transfer_payload[:line_items].each do |i|
+      @transfer_payload[:line_items].each do |i|
         @over_receipt_items << { sku: i[:sku],
                                  received: i[:quantity],
                                  nsproduct_id: i[:nsproduct_id] }
@@ -130,21 +130,21 @@ module NetsuiteIntegration
       # for those not present in the shipment payload
 
       @receipt.item_list.items.each do |receipt_item|
-        item = transfer_payload[:line_items].find do |i|
+        item = @transfer_payload[:line_items].find do |i|
           i[:sku] == receipt_item.item.name.split(' ')[0]
         end
 
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
-          # capture themn and issue another transfer for the balance
+          # capture them and issue another transfer for the balance
 
-          over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i) * -1
+          over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i)
           if over_receipt > 0
             @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
                                      received: over_receipt,
                                      nsproduct_id: receipt_item.item.internal_id }
           end
-          receipt_item.quantity = item[:quantity]
+          receipt_item.quantity = item[:quantity].to_i
           receipt_item.item_receive = true
           if receipt_item.location.internal_id.nil?
             receipt_item.location = { internal_id: transfer_location }
@@ -152,7 +152,6 @@ module NetsuiteIntegration
         else
           receipt_item.quantity = 0
           receipt_item.item_receive = false
-          raise "#{@transfer_payload} #{@receipt.item_list.items}"
         end
       end
     end
@@ -162,7 +161,7 @@ module NetsuiteIntegration
       # in the fulfillment request so we just set the quantity to 0 here
       # for those not present in the shipment payload
       fulfillment.item_list.items.each do |fulfillment_item|
-        item = transfer_payload[:line_items].find do |i|
+        item = @transfer_payload[:line_items].find do |i|
           i[:sku] == fulfillment_item.item.name.split(' ')[0]
         end
 
@@ -264,7 +263,7 @@ module NetsuiteIntegration
           receipt.add
 
           if receipt.errors.any? { |e| e.type != 'WARN' }
-            raise "Receipt create failed: #{receipt.errors.map(&:message)}"
+            raise "Receipt create failed:  #{receipt.errors.map(&:message)}"
           else
             line_item = { transfer_name: transfer_name,
                           netsuite_tran_id: @transfer.internal_id,
