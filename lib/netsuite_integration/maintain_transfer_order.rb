@@ -23,7 +23,6 @@ module NetsuiteIntegration
       elsif sent?
         create_fulfillment
       elsif received?
-        create_fulfillment
         create_receipt
       end
     end
