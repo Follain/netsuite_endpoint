@@ -165,16 +165,18 @@ module NetsuiteIntegration
       # NetSuite will through an error when you dont return all items back
       # in the fulfillment request so we just set the quantity to 0 here
       # for those not present in the shipment payload
+      @fulfillment_found = false
       fulfillment.item_list.items.each do |fulfillment_item|
         item = @transfer_payload[:line_items].find do |i|
           i[:sku] == fulfillment_item.item.name.split(' ')[0]
         end
 
-        fulfillment_item.quantity = if item
-                                      item[:quantity]
-                                    else
-                                      0
-                                    end
+        if item
+          fulfillment_item.quantity = item[:quantity]
+          @fulfillment_found = true
+        else
+          fulfillment_item.quantity = 0
+        end
       end
     end
 
@@ -236,19 +238,20 @@ module NetsuiteIntegration
         fulfillment.memo = transfer_memo
         fulfillment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
         build_fulfillment_item_list
+        if @fulfillment_found
+          fulfillment.add
 
-        fulfillment.add
-
-        if fulfillment.errors.any? { |e| e.type != 'WARN' }
-          raise "Fullfilment create failed: #{fulfillment.errors.map(&:message)}"
-        else
-          line_item = { transfer_name: transfer_name,
-                        netsuite_tran_id: transfer.internal_id,
-                        description: transfer_memo,
-                        type: 'transfer_order' }
-          ExternalReference.record :transfer_order, transfer_name,
-                                   { netsuite: line_item },
-                                   netsuite_id: fulfillment.internal_id
+          if fulfillment.errors.any? { |e| e.type != 'WARN' }
+            raise "Fullfilment create failed: #{fulfillment.errors.map(&:message)}"
+          else
+            line_item = { transfer_name: transfer_name,
+                          netsuite_tran_id: transfer.internal_id,
+                          description: transfer_memo,
+                          type: 'transfer_order' }
+            ExternalReference.record :transfer_order, transfer_name,
+                                     { netsuite: line_item },
+                                     netsuite_id: fulfillment.internal_id
+          end
         end
       end
     end
