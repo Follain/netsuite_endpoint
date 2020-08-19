@@ -170,12 +170,17 @@ module NetsuiteIntegration
         item = @transfer_payload[:line_items].find do |i|
           i[:sku] == fulfillment_item.item.name.split(' ')[0]
         end
-
-        if item
-          fulfillment_item.quantity = item[:quantity]
-          @fulfillment_found = true
+        if !transfer_source_location.to_s.include?('Quiet')
+          # auto fulfill stores
+          if item
+            fulfillment_item.quantity = item[:quantity]
+            @fulfillment_found = true
+          else
+            fulfillment_item.quantity = 0
+          end
         else
-          fulfillment_item.quantity = 0
+          fulfillment_item.quantity = fulfillment_item.quantity_remaining
+          @fulfillment_found = true
         end
       end
     end
