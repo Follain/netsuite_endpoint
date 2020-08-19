@@ -234,7 +234,8 @@ module NetsuiteIntegration
       if
          pending_fulfillment?
         @fulfillment = NetSuite::Records::ItemFulfillment.initialize @transfer
-        fulfillment.external_id = transfer_id
+        fulfillment.external_id = transfer_id + 'SENT'
+
         fulfillment.memo = transfer_memo
         fulfillment.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
         build_fulfillment_item_list
@@ -263,7 +264,7 @@ module NetsuiteIntegration
       if new_receipt?
         if pending_receipt?
           @receipt = NetSuite::Records::ItemReceipt.initialize @transfer
-          receipt.external_id = transfer_id
+          receipt.external_id = transfer_id + 'RECEIVED'
           receipt.memo = transfer_memo
           receipt.tran_date = NetSuite::Utilities.normalize_time_to_netsuite_date(transfer_date.to_datetime)
           build_receipt_item_list
