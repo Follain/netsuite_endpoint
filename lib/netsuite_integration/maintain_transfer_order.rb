@@ -23,6 +23,7 @@ module NetsuiteIntegration
       elsif sent?
         create_fulfillment
       elsif received?
+        create_fulfillment
         create_receipt
       end
     end
@@ -134,15 +135,15 @@ module NetsuiteIntegration
           i[:sku] == receipt_item.item.name.split(' ')[0]
         end
 
-        if receipt_item.item.name.split(' ')[0] == '702685964652'
-          raise "Error Item/sku  #{@receipt.item_list.item}!!#{@transfer_payload}"
-        end
+        # if receipt_item.item.name.split(' ')[0] == '816248020164'
+        #  raise "Error Item/sku  #{@receipt.item_list.item}!!#{@transfer_payload}"
+        # end
 
         if item
           # issue netsuite does not allow over receipts, infact it just ignores them !!!
           # capture them and issue another transfer for the balance
 
-          over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i)
+          over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i) * -1
           if over_receipt > 0
             @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
                                      received: over_receipt,
