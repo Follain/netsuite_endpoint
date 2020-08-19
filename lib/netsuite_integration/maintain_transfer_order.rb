@@ -268,7 +268,7 @@ module NetsuiteIntegration
           receipt.add
 
           if receipt.errors.any? { |e| e.type != 'WARN' }
-            raise "Receipt create failed:  #{receipt.errors.map(&:message)}"
+            raise "Receipt create failed: #{@receipt.inspect} #{@transfer_payload} #{receipt.errors.map(&:message)}"
           else
             line_item = { transfer_name: transfer_name,
                           netsuite_tran_id: @transfer.internal_id,
