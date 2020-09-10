@@ -50,7 +50,7 @@ module NetsuiteIntegration
       fulfillment.item_list.items.each do |fulfillment_item|
         fulfillment_item.item_is_fulfilled = false
         item = salesorder_payload[:line_items].find do |i|
-          i[:sku] == fulfillment_item.item.name.split(' ')[0]
+          i[:sku] == fulfillment_item.item.name.split(' ')[0].upcase.sub('-RETIRED','')
         end
         fulfillment_item.location = { internal_id: salesorder_payload[:location_id] }
 

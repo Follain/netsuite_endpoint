@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module NetsuiteIntegration
   class PurchaseOrderReceipt < Base
     attr_reader :config, :payload, :ns_order, :order_payload, :receipt
@@ -61,7 +63,7 @@ module NetsuiteIntegration
     end
 
     def received_date
-      @received_date=Date.parse(order_payload['received_date']).strftime( "%F")
+      @received_date = Date.parse(order_payload['received_date']).strftime('%F')
     end
 
     def receipt_memo
@@ -69,7 +71,7 @@ module NetsuiteIntegration
     end
 
     def touch_item(obj)
-      #touch item so top level is update for stitch
+      # touch item so top level is update for stitch
       item = NetSuite::Records::InventoryItem.new(
         item_id: obj.item.internal_id
       )
@@ -82,10 +84,10 @@ module NetsuiteIntegration
       # for those not present in the shipment payload
       @receipt.item_list.items.each do |receipt_item|
         item = order_payload[:line_items].find do |i|
-          i[:sku] == receipt_item.item.name.split(' ')[0]
+          i[:sku] == receipt_item.item.name.split(' ')[0].upcase.sub('-RETIRED', '')
         end
 
-        #required for stitch
+        # required for stitch
         touch_item(receipt_item)
 
         if item && item[:received].to_i > 0
@@ -108,6 +110,7 @@ module NetsuiteIntegration
       ns_order.item_list.items.each do |order_item|
         item = order_payload[:line_items].find { |i| i[:sku] == order_item.item.name.split(' ')[0] }
         next unless item
+
         # reopen po if it has been closed by mistake!
         # closed status must be 'F' not false ... ns inconsistency
         if order_item.is_closed
@@ -115,9 +118,12 @@ module NetsuiteIntegration
           @over_receipt = true
         end
         # check for over receipts!
-        next unless (order_item.quantity.to_i - order_item.quantity_received.to_i) < item[:received].to_i
+        unless (order_item.quantity.to_i - order_item.quantity_received.to_i) < item[:received].to_i
+          next
+        end
         # first overreceipt works free of charge no update required!
         next unless order_item.quantity_received.to_i != 0
+
         @over_receipt = true
         order_item.quantity =
           (order_item.quantity_received.to_i + item[:received].to_i)

@@ -132,7 +132,7 @@ module NetsuiteIntegration
 
       @receipt.item_list.items.each do |receipt_item|
         item = @transfer_payload[:line_items].find do |i|
-          i[:sku] == receipt_item.item.name.split(' ')[0]
+          i[:sku] == receipt_item.item.name.split(' ')[0].upcase.sub('-RETIRED', '')
         end
 
         # if receipt_item.item.name.split(' ')[0] == '816248020164'
@@ -168,7 +168,7 @@ module NetsuiteIntegration
       @fulfillment_found = false
       fulfillment.item_list.items.each do |fulfillment_item|
         item = @transfer_payload[:line_items].find do |i|
-          i[:sku] == fulfillment_item.item.name.split(' ')[0]
+          i[:sku] == fulfillment_item.item.name.split(' ')[0].upcase.sub('-RETIRED', '')
         end
         if !transfer_source_location.to_s.include?('Quiet')
           # auto fulfill stores
