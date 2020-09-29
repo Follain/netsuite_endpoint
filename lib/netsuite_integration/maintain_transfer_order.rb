@@ -144,7 +144,7 @@ module NetsuiteIntegration
           # capture them and issue another transfer for the balance
 
           over_receipt = (receipt_item.quantity_remaining.to_i - item[:quantity].to_i) * -1
-          if over_receipt > 0
+          if over_receipt.positive?
             @over_receipt_items << { sku: receipt_item.item.name.split(' ')[0],
                                      received: over_receipt,
                                      nsproduct_id: receipt_item.item.internal_id }

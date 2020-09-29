@@ -84,7 +84,7 @@ module NetsuiteIntegration
                         stock_description: stock_desc,
                         custom_field_list: cfl)
           end
-          end
+        end
       end
 
       if item.errors.present? { |e| e.type != 'WARN' }
@@ -97,7 +97,7 @@ module NetsuiteIntegration
         ExternalReference.record :product, sku, { netsuite: line_item },
                                  netsuite_id: item.internal_id
       end
-  end
+    end
 
     def inventory_item_service
       @inventory_item_service ||= NetsuiteIntegration::Services::InventoryItem
