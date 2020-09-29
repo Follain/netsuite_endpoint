@@ -72,11 +72,11 @@ module NetsuiteIntegration
     end
 
     def transfer_name
-      transfer_payload['transfer_name'].split(/ /).first
+      transfer_payload['transfer_name'].split(/ /).first.sub('Store', '')
     end
 
     def transfer_id
-      transfer_payload['transfer_id'] || transfer_payload['transfer_name']
+      transfer_payload['transfer_id'] || transfer_payload['transfer_name'].sub('Store', '')
     end
 
     def transfer_location
