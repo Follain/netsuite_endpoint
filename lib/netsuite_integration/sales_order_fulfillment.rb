@@ -50,9 +50,10 @@ module NetsuiteIntegration
       fulfillment.item_list.items.each do |fulfillment_item|
         fulfillment_item.item_is_fulfilled = false
         item = salesorder_payload[:line_items].find do |i|
-          i[:sku] == fulfillment_item.item.name.split(' ')[0].upcase.sub('-RETIRED','')
+          i[:sku] == fulfillment_item.item.name.split(' ')[0].upcase.sub('-RETIRED', '')
         end
         fulfillment_item.location = { internal_id: salesorder_payload[:location_id] }
+        fulfillment_item.department = { internal_id: ENV.fetch('NETSUITE_ECOMM_DEPT') }
 
         if item && fulfillment_item.quantity_remaining != 0
           fulfillment_item.quantity = item[:quantity]
