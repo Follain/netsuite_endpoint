@@ -37,7 +37,9 @@ module NetsuiteIntegration
     end
 
     def ns_order
-      @ns_order = NetSuite::Records::PurchaseOrder.get(ns_id)
+      po_search = find_po_by_tran_id(order_payload['po_id'])
+      internal_id = po_search.internal_id
+      @ns_order = NetSuite::Records::PurchaseOrder.get(internal_id)
     end
 
     def find_rec_by_external_id(receipt_id)
@@ -104,6 +106,22 @@ module NetsuiteIntegration
           receipt_item.item_receive = false
         end
       end
+    end
+
+    def find_po_by_tran_id(tran_id)
+      NetSuite::Records::PurchaseOrder.search(
+        criteria: {
+          basic: [{
+            field: 'tranId',
+            operator: 'is',
+            value: tran_id
+          }]
+        },
+        preferences: {
+          pageSize: 100,
+          bodyFieldsOnly: false
+        }
+      ).results.first
     end
 
     def update_po_overreceipt(ns_order)
