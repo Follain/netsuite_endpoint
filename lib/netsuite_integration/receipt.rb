@@ -2,14 +2,14 @@
 
 module NetsuiteIntegration
   class Receipt < Base
-    attr_reader :config, :payload, :purchase_order, :nspo
+    attr_reader :config, :payload, :purchase_order, :nspo, :internal_id
 
     def initialize(config, payload = {})
       super(config, payload)
       @config = config
       @purchase_order = payload[:purchase_order]
       @po_search = find_po_by_tran_id(payload['po_id'])
-      internal_id = @po_search.internal_id
+      @internal_id = @po_search.internal_id
       @nspo = NetSuite::Records::PurchaseOrder.get(internal_id: internal_id)
       r = NetSuite::Records::ItemReceipt.new
       r.external_id  = purchase_order['line_items'].first['consignment_id'] + Time.new.to_s
@@ -55,7 +55,7 @@ module NetsuiteIntegration
       # Update Po qty if over receipt
       if updatepo
         p = NetSuite::Records::PurchaseOrder.new({
-                                                   internal_id: nspo.internal_id,
+                                                   internal_id: internal_id,
                                                    external_id: nspo.external_id
                                                  })
         attributes = nspo.attributes
