@@ -37,7 +37,7 @@ module NetsuiteIntegration
     end
 
     def ns_order
-      po_search = find_po_by_tran_id(order_payload['po_id'])
+      po_search = find_po_by_tran_id(po_id)
       internal_id = po_search.internal_id
       @ns_order = NetSuite::Records::PurchaseOrder.get(internal_id)
     end
@@ -57,19 +57,23 @@ module NetsuiteIntegration
     end
 
     def receipt_id
-      @receipt_id ||= order_payload['receipt_id']
+      order_payload['receipt_id']
+    end
+
+    def po_id
+      order_payload['po_id'].split('_').first.split('-').first
     end
 
     def ns_id
-      @ns_id ||= order_payload['id']
+      order_payload['id']
     end
 
     def received_date
-      @received_date = Date.parse(order_payload['received_date']).strftime('%F')
+      Date.parse(order_payload['received_date']).strftime('%F')
     end
 
     def receipt_memo
-      @receipt_memo ||= order_payload['receipt_memo']
+      order_payload['receipt_memo']
     end
 
     def touch_item(obj)
